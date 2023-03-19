@@ -56,7 +56,7 @@ function end(tag){//结束标签
 } 
 
 
-function parseHTML(html){
+export function parseHTML(html){
     while(html){            //由开始标签 文本 结束标签组成
         let textEnd = html.indexOf('<')
         if(textEnd == 0){ //标签
@@ -108,10 +108,6 @@ function parseHTML(html){
         // console.log(html)
     }
 
-    console.log(root)
+    // console.log(root)
     return root
-}
-
-export function compileToFunction(el){
-    let ast = parseHTML(el)
 }

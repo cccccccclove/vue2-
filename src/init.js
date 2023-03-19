@@ -1,5 +1,7 @@
 import { initState } from "./initState"
-import {compileToFunction} from './compile/index'
+import {compileToFunction} from './compile/parseAst'
+import {generate} from './compile/generate'
+
 export function initMixin(Vue) { //把vue传过来以便使用vue.propertype
     Vue.prototype._init = function (options) {
         let vm = this
@@ -23,6 +25,8 @@ export function initMixin(Vue) { //把vue传过来以便使用vue.propertype
                 el = el.outerHTML
                 //变成ast语法树
                 let ast = compileToFunction(el)
+                //ast语法树变成render函数->1，ast语法树变成字符串 2.字符串变成render函数
+                generate(ast)
             }
         }
     }
