@@ -248,6 +248,8 @@
     var element = createAstElement(tag, attrs);
     if (!root) {
       root = element;
+    } else {
+      createParent.children.push(element);
     }
     createParent = element;
     stack.push(element);
@@ -363,7 +365,7 @@
     for (var i = 0; i < attrs.length; i++) {
       _loop();
     }
-    return str.slice(0, -1);
+    return "".concat('{' + str.slice(0, -1) + '}');
   }
 
   //处理子节点
@@ -389,13 +391,12 @@
       var lastindex = defaultTagRE.lastIndex = 0; //把正则表达式匹配到的下标重新置为0，否者无法再次使用正则
       var match;
       while (match = defaultTagRE.exec(text)) {
-        console.log(match);
         var index = match.index;
         if (index > lastindex) {
           //文本
           token.push(JSON.stringify(text.slice(lastindex, index)));
         }
-        token.push("_s(".concat(match[1].trim(), ")"));
+        token.push("_s('".concat(match[1].trim(), "')"));
         lastindex = index + match[0].length;
       }
       if (lastindex < text.length) {
@@ -405,11 +406,21 @@
     }
   }
   function generate(el) {
-    // console.log(el)
     var children = genChildren(el);
-    // console.log(children)
-    var code = "_c(".concat(el.tag, ",").concat(el.attrs.length ? "".concat(genPorps(el.attrs)) : 'null', "),").concat(children ? "".concat(children) : 'null');
-    console.log(code);
+    // console.log(el)
+    var code = "_c('".concat(el.tag, "',").concat(el.attrs.length ? "".concat(genPorps(el.attrs)) : 'null', ",").concat(children ? "".concat(children) : 'null', ")"); //_c处理元素 _v处理文本 _s处理变量
+    // console.log(code,'code')
+    return code;
+  }
+
+  function mounteComponent(vm, el) {
+    console.log(vm, el);
+    vm._updata(vm._render());
+  }
+  function lifecycleMixin(Vue) {
+    Vue.prototype._updata = function (vnode) {
+      console.log(vnode);
+    };
   }
 
   function initMixin(Vue) {
@@ -437,9 +448,71 @@
           //变成ast语法树
           var ast = compileToFunction(el);
           //ast语法树变成render函数->1，ast语法树变成字符串 2.字符串变成render函数
-          generate(ast);
+          var code = generate(ast);
+          //将render字符串变成函数
+          var render = new Function("with(this){return ".concat(code, "}")); ///////重要！！！！
+          // console.log(render)
+          // render函数变成虚拟dom -- vm._render
+          //将虚拟Dom变成真实DOm并放到页面上去 -- vm._update
+          options.render = render;
         }
       }
+      //挂载组件
+      mounteComponent(vm, el);
+    };
+  }
+
+  /*
+  with函数：
+  缺点：容易导致内存泄漏
+  let obj = {
+      a:1,
+      b:2
+  }
+  with(obj){         
+      console.log(a,b)
+  }
+  */
+
+  function renderMixin(Vue) {
+    Vue.prototype._c = function () {
+      return createElement.apply(void 0, arguments);
+    };
+    Vue.prototype._v = function (text) {
+      return createText(text);
+    };
+    Vue.prototype._s = function (val) {
+      console.log(this.data[val]);
+      return val == null ? '' : _typeof(val) == 'object' ? JSON.stringify(val) : val;
+    };
+    Vue.prototype._render = function () {
+      //render函数变成vode
+      var vm = this;
+      var render = vm.$options.render;
+      var vnode = render.call(this);
+      return vnode;
+    };
+  }
+
+  //创建文本
+  function createText(text) {
+    return vnode(undefined, undefined, undefined, undefined, text);
+  }
+  //创建元素
+  function createElement(tag) {
+    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      children[_key - 2] = arguments[_key];
+    }
+    return vnode(tag, data, data.key, children);
+  }
+  function vnode(tag, data, key, children, text) {
+    return {
+      tag: tag,
+      data: data,
+      key: key,
+      children: children,
+      text: text
     };
   }
 
@@ -448,7 +521,9 @@
     // 初始化
     this._init(options);
   }
-  initMixin(Vue);
+  initMixin(Vue); //初始化数据
+  lifecycleMixin(Vue); //初始化生命周期
+  renderMixin(Vue);
 
   return Vue;
 

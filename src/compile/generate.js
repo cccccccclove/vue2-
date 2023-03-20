@@ -21,7 +21,7 @@ function genPorps(attrs){
         }
         str += `${attr.name}:${JSON.stringify(attr.value)},`
     }
-    return str.slice(0,-1)
+    return `${'{'+str.slice(0,-1)+'}'}`
 }
 
 //处理子节点
@@ -44,12 +44,11 @@ function gen(node){ //1.元素  3.文本
         let lastindex = defaultTagRE.lastIndex = 0 //把正则表达式匹配到的下标重新置为0，否者无法再次使用正则
         let match
         while(match = defaultTagRE.exec(text)){
-            console.log(match)
             let index = match.index
             if(index > lastindex){ //文本
                 token.push(JSON.stringify(text.slice(lastindex,index)))
             }
-            token.push(`_s(${match[1].trim()})`)
+            token.push(`_s('${match[1].trim()}')`)
             lastindex = index + match[0].length
         }
         if(lastindex < text.length){
@@ -60,9 +59,9 @@ function gen(node){ //1.元素  3.文本
 }
 
 export function generate(el){
-    // console.log(el)
     let children = genChildren(el)
-    // console.log(children)
-    let code = `_c(${el.tag},${el.attrs.length?`${genPorps(el.attrs)}`:'null'}),${children?`${children}`:'null'}`
-    console.log(code)
+    // console.log(el)
+    let code = `_c('${el.tag}',${el.attrs.length?`${genPorps(el.attrs)}`:'null'},${children?`${children}`:'null'})`               //_c处理元素 _v处理文本 _s处理变量
+    // console.log(code,'code')
+    return code
 }
