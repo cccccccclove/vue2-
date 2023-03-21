@@ -19,6 +19,7 @@ export function initMixin(Vue) { //把vue传过来以便使用vue.propertype
     Vue.prototype.$mount = function (el) {
         let vm = this
         el = document.querySelector(el)
+        vm.$el = el
         let options = vm.$options
         if(!options.render){
             let template = options.template

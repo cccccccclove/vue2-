@@ -413,13 +413,47 @@
     return code;
   }
 
-  function mounteComponent(vm, el) {
-    console.log(vm, el);
-    vm._updata(vm._render());
+  function patch(oldNode, vnode) {
+    //vnode变成真实dom
+    //1.创建新的dom
+    var el = createEl(vnode);
+    //2.替换 -》获取父节点。把新的节点插入。删除
+    // console.log(oldNode,vnode)
+    var parentEl = oldNode.parentNode;
+    parentEl.insertBefore(el, oldNode.nextsibling);
+    parentEl.removeChild(oldNode);
+    return el;
   }
+  function createEl(vnode) {
+    var tag = vnode.tag,
+      children = vnode.children;
+      vnode.key;
+      vnode.data;
+      var text = vnode.text;
+    if (typeof tag == 'string') {
+      //标签
+      vnode.el = document.createElement(tag);
+      if (children.length > 0) {
+        children.forEach(function (child) {
+          vnode.el.appendChild(createEl(child));
+        });
+      }
+    } else {
+      vnode.el = document.createTextNode(text);
+    }
+    return vnode.el;
+  }
+
+  function mounteComponent(vm, el) {
+    // console.log(vm,el)
+    vm._updata(vm._render()); //vm._render 把render函数变成虚拟dom，vm_updata再把它变成真实dom
+  }
+
   function lifecycleMixin(Vue) {
     Vue.prototype._updata = function (vnode) {
-      console.log(vnode);
+      // console.log(vnode)
+      var vm = this;
+      vm.$el = patch(vm.$el, vnode); //两个参数：旧的dom，虚拟dom
     };
   }
 
@@ -440,6 +474,7 @@
     Vue.prototype.$mount = function (el) {
       var vm = this;
       el = document.querySelector(el);
+      vm.$el = el;
       var options = vm.$options;
       if (!options.render) {
         var template = options.template;
@@ -458,7 +493,7 @@
         }
       }
       //挂载组件
-      mounteComponent(vm, el);
+      mounteComponent(vm);
     };
   }
 
@@ -482,7 +517,7 @@
       return createText(text);
     };
     Vue.prototype._s = function (val) {
-      console.log(this.data[val]);
+      // console.log(this.data[val])
       return val == null ? '' : _typeof(val) == 'object' ? JSON.stringify(val) : val;
     };
     Vue.prototype._render = function () {
@@ -516,6 +551,41 @@
     };
   }
 
+  //策略模式
+  var starts = {};
+  starts.data = function () {}; //合并data
+  starts.comuted = function () {}; //合并comuted
+  starts.watch = function () {}; //合并watch
+  starts.methods = function () {}; //合并methods
+
+  function mergeOptions(parent, children) {
+    console.log(parent, children);
+    for (var key in parent) {
+      //有父亲，没有儿子
+      mergeField(key);
+    }
+    for (var _key in children) {
+      mergeField(_key); //有儿子，没有父亲
+    }
+
+    function mergeField(key) {
+      if (starts[key]) {
+        starts[key](parent[key], children[key]);
+      } else {
+        children[key];
+      }
+    }
+  }
+
+  function initGlobApi(Vue) {
+    //把所有的属性都放到options里面 {created:[],watch:[],data:[]...}
+    Vue.options = {};
+    Vue.Mixin = function (mixin) {
+      //对象合并
+      mergeOptions(this.options, mixin);
+    };
+  }
+
   function Vue(options) {
     // console.log(options)
     // 初始化
@@ -524,6 +594,9 @@
   initMixin(Vue); //初始化数据
   lifecycleMixin(Vue); //初始化生命周期
   renderMixin(Vue);
+
+  //全局方法
+  initGlobApi(Vue);
 
   return Vue;
 

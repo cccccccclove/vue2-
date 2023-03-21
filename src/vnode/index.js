@@ -6,7 +6,7 @@ export function renderMixin(Vue){
             return createText(text)
       }
       Vue.prototype._s = function(val){
-            console.log(this.data[val])
+            // console.log(this.data[val])
            return val==null ? '' : (typeof val == 'object') ? JSON.stringify(val) : val
       }
       Vue.prototype._render = function(){    //render函数变成vode

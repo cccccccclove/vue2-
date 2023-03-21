@@ -24,6 +24,8 @@
             watch:{},
             computed:{},
         })
+
+        Vue.Mixin()
         // console.log(vm._data.arr.push({b:6}))  //vm为实例，vm.msg = vm._data.msg
 
         //vue初次渲染步骤：初始化数据-》编译模板-》变成render（）=》生成虚拟节点-》生成真实Dom=》渲染到页面
@@ -34,6 +36,17 @@
         //1、Vue.mixin混入
         //2、设计模式 消息订阅
          
+
+        /*
+            Vue渲染流程：数据初始化-》对模板进行编译=》变成render函数
+            -》render函数变成vnode=》vnode变成真实dom并放到页面
+        */
+
+        /*
+        vue生命周期 
+        1.Vue.mixin({})混入
+        2.订阅发布的设计模式
+        */
     </script>
 </body>
 </html>
