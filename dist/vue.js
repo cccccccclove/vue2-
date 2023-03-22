@@ -446,9 +446,10 @@
 
   function mounteComponent(vm, el) {
     // console.log(vm,el)
+    callHook(vm, 'beforeMount');
     vm._updata(vm._render()); //vm._render 把render函数变成虚拟dom，vm_updata再把它变成真实dom
+    callHook(vm, 'mounted');
   }
-
   function lifecycleMixin(Vue) {
     Vue.prototype._updata = function (vnode) {
       // console.log(vnode)
@@ -457,14 +458,75 @@
     };
   }
 
+  //生命周期调用
+  function callHook(vm, hook) {
+    var handlers = vm.$options[hook];
+    console.log(handlers, 'handlers');
+    if (handlers) {
+      for (var i = 0; i < handlers.length; i++) {
+        handlers[i].call(this);
+        console.log(handlers[i]);
+      }
+    }
+  }
+
+  var HOOKS = ["beforeCreate", "created", 'beforeMount', 'mounted', 'beforeUpdate', 'updated', 'beforeDestory', 'destoryed'];
+
+  //策略模式
+  var starts = {};
+  starts.data = function () {}; //合并data
+  starts.comuted = function () {}; //合并comuted
+  starts.watch = function () {}; //合并watch
+  starts.methods = function () {}; //合并methods
+
+  HOOKS.forEach(function (hook) {
+    starts[hook] = mergeHook;
+  });
+  function mergeHook(parentVal, childVal) {
+    if (childVal) {
+      if (parentVal) {
+        return parentVal.concat(childVal);
+      } else {
+        return [childVal];
+      }
+    } else {
+      return parentVal;
+    }
+  }
+  function mergeOptions(parent, children) {
+    console.log(parent, children);
+    var options = {};
+    for (var key in parent) {
+      //有父亲，没有儿子
+      mergeField(key);
+    }
+    for (var _key in children) {
+      mergeField(_key); //有儿子，没有父亲
+    }
+
+    function mergeField(key) {
+      if (starts[key]) {
+        console.log(starts[key], options[key]);
+        options[key] = starts[key](parent[key], children[key]);
+      } else {
+        options[key] = children[key];
+      }
+    }
+    console.log(options, 'options');
+    return options;
+  }
+
   function initMixin(Vue) {
     //把vue传过来以便使用vue.propertype
     Vue.prototype._init = function (options) {
       var vm = this;
       // console.log(this)      //=>Vue实例
-      vm.$options = options;
+      vm.$options = mergeOptions(Vue.options, options);
+      console.log(vm.$options, '==');
+      callHook(vm, 'beforeCreate');
       //初始化状态
       initState(vm);
+      callHook(vm, 'created');
       //模板编译  ->  查看vue官网的生命周期
       if (vm.$options.el) {
         vm.$mount(vm.$options.el);
@@ -551,38 +613,12 @@
     };
   }
 
-  //策略模式
-  var starts = {};
-  starts.data = function () {}; //合并data
-  starts.comuted = function () {}; //合并comuted
-  starts.watch = function () {}; //合并watch
-  starts.methods = function () {}; //合并methods
-
-  function mergeOptions(parent, children) {
-    console.log(parent, children);
-    for (var key in parent) {
-      //有父亲，没有儿子
-      mergeField(key);
-    }
-    for (var _key in children) {
-      mergeField(_key); //有儿子，没有父亲
-    }
-
-    function mergeField(key) {
-      if (starts[key]) {
-        starts[key](parent[key], children[key]);
-      } else {
-        children[key];
-      }
-    }
-  }
-
   function initGlobApi(Vue) {
     //把所有的属性都放到options里面 {created:[],watch:[],data:[]...}
     Vue.options = {};
     Vue.Mixin = function (mixin) {
       //对象合并
-      mergeOptions(this.options, mixin);
+      Vue.options = mergeOptions(this.options, mixin);
     };
   }
 
@@ -593,7 +629,7 @@
   }
   initMixin(Vue); //初始化数据
   lifecycleMixin(Vue); //初始化生命周期
-  renderMixin(Vue);
+  renderMixin(Vue); //渲染
 
   //全局方法
   initGlobApi(Vue);

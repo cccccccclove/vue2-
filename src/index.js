@@ -10,7 +10,7 @@ function Vue(options){
 
 initMixin(Vue) //初始化数据
 lifecycleMixin(Vue) //初始化生命周期
-renderMixin(Vue)
+renderMixin(Vue) //渲染
 
 //全局方法
 initGlobApi(Vue)

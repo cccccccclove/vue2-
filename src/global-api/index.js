@@ -5,6 +5,6 @@ export function initGlobApi(Vue){
     Vue.options = {}
     Vue.Mixin = function(mixin){
         //对象合并
-        mergeOptions(this.options,mixin)
+        Vue.options = mergeOptions(this.options,mixin)
     }
 }

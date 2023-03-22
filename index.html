@@ -25,7 +25,17 @@
             computed:{},
         })
 
-        Vue.Mixin()
+        Vue.Mixin({
+            beforeCreate:function a(){console.log('a')},
+            created:function b(){
+                console.log('b')
+            },
+            beforeMount:function c(){console.log('c')},
+            mounted:function d(){console.log('d')}
+        })
+        Vue.Mixin({
+            created:function b(){}
+        })
         // console.log(vm._data.arr.push({b:6}))  //vm为实例，vm.msg = vm._data.msg
 
         //vue初次渲染步骤：初始化数据-》编译模板-》变成render（）=》生成虚拟节点-》生成真实Dom=》渲染到页面
